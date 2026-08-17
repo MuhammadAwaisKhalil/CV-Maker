@@ -1,11 +1,12 @@
-from fastmcp import FastMCP
-from db.cv_data import fetch_complete_user_cv_data
-from typing import Dict,List,Any
-import docx
+import os
 import sys
 import io
-import os
-
+import docx
+from docx.oxml import parse_xml
+from docx.oxml.ns import nsdecls
+from typing import Dict, Any
+from fastmcp import FastMCP
+from db.cv_data import fetch_complete_user_cv_data
 
 mcp = FastMCP(name="CV Agent Tools")
 
@@ -27,6 +28,9 @@ def get_complete_user_data(user_id:int)->Dict[str,Any]:
 def execute_dynamic_cv_code(generated_python_code:str, output_filepath:str)->Dict[str, Any]:
     """Executes dynamically generated python-docx code inside a sandbox environment 
     to create and save a Microsoft Word (.docx) CV."""
+
+    os.makedirs(os.path.dirname(output_filepath) or ".", exist_ok=True)
+
     sandbox_globals = {
         "docx": docx,
         "Document": docx.Document,
@@ -35,6 +39,8 @@ def execute_dynamic_cv_code(generated_python_code:str, output_filepath:str)->Dic
         "RGBColor": docx.shared.RGBColor,
         "WD_ALIGN_PARAGRAPH": docx.enum.text.WD_ALIGN_PARAGRAPH,
         "WD_TABLE_ALIGNMENT": docx.enum.table.WD_TABLE_ALIGNMENT,
+        "parse_xml": parse_xml,
+        "nsdecls": nsdecls,
         "OUTPUT_PATH": output_filepath,
         "__builtins__": {
             "range": range,
@@ -46,10 +52,12 @@ def execute_dynamic_cv_code(generated_python_code:str, output_filepath:str)->Dic
             "int": int,
             "float": float,
             "bool": bool,
-            "print": print
+            "print": print,
+            "isinstance": isinstance,
+            "hasattr": hasattr,
+            "getattr": getattr,
         }
     }
-
     stdout_capture = io.StringIO()
     sys.stdout = stdout_capture
 

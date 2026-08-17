@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     SECRET_KEY:str
     ALGORITHM:str="HS256"
     ACCESS_TOKEN_EXPIRY_DAYS:int=7
+    MAX_AGENT_ITERATIONS=5
 
     read = SettingsConfigDict(env_file=".env",extra="ignore")
 

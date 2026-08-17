@@ -1,30 +1,29 @@
-import os
-from fastapi import FastAPI, HTTPException, status
-from schema.models import CVGenerateRequest
-from fastapi.responses import FileResponse
-from app.cv_agent import run_cv_agent
-from app.docx_generator import create_docx
+from fastapi import FastAPI, status, HTTPException
+from router.auth_router import auth_router
+from router.agent_router import agent_router
+from fastapi.middleware.cors import CORSMiddleware
+from db.database import init_db
 
-app = FastAPI(title="AI Resume Creator")
 
-@app.post("/generate_cv")
-async def generate_cv(user_id:int, request:CVGenerateRequest):
-    try:
-        tailored_cv = await run_cv_agent(user_id, request)
+app = FastAPI(title="AI CV Creater Server")
 
-        file_path = create_docx(tailored_cv)
-        if not os.path.exists(file_path):
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail="Failed to create the document")
-        filename = os.path.basename(file_path)
+# Enable CORS for frontend integration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-        return FileResponse(
-                path=file_path,
-                filename=filename,
-                media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred during CV generation: {str(e)}",
-        )
-    
+@app.on_event("startup")
+def on_startup():
+    init_db()
+
+@app.include_router(auth_router)
+@app.include_router(agent_router)
+
+@app.get("/health", status_code=status.HTTP_200_OK)
+def health_check():
+    return {"status":"Ok"}
+
