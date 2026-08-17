@@ -30,6 +30,3 @@ def create_user(full_name:str, email:str, hashed_password:str)->int:
 
 
         return cursor.lastrowid()
-
-
-        
